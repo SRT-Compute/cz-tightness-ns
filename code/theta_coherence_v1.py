@@ -47,7 +47,7 @@ def load_field(path):
             raise RuntimeError("Kunne ikke finde 3-komponent felt - send h5-indholdslisten ovenfor.")
     arr = arr.astype(np.float32)
     isvel = not any(t in names.lower() for t in ("om", "vort", "w_x"))
-    print(f"  felt: '{names}'  shape={arr.shape}  tolket som {'VELOCITY -> beregner curl' if isvel else 'VORTICITY'}")
+    print(f"  felt: '{names}'  shape={arr.shape}  read as {'VELOCITY -> computing curl' if isvel else 'VORTICITY'}")
     if isvel:
         g = lambda a, ax: np.gradient(a, axis=ax)
         u, v, w = arr
@@ -66,7 +66,7 @@ def _ratio_of(vel):
     return S2/float((om**2).sum(0).mean())
 
 def calibrate_orientation(vel):
-    """36 (akse-perm x komp-perm) paa subkube; vaelg ratio naermest 0.5; kraev [0.45,0.55]."""
+    """36 (axis-perm x comp-perm) on a central subcube; pick ratio closest to 0.5; require [0.45,0.55]."""
     from itertools import permutations
     N = vel.shape[1]; c0 = N//2; h = min(48, c0-2)
     sub = vel[:, c0-h:c0+h, c0-h:c0+h, c0-h:c0+h].astype(np.float32)
@@ -78,7 +78,7 @@ def calibrate_orientation(vel):
             if abs(r-0.5) < abs(best[2]-0.5): best = (ap, cp, r)
     ap, cp, r = best
     ok = 0.45 <= r <= 0.55
-    print(f"  ORIENTERING: akse={ap} komp={cp} subkube-ratio={r:.3f}  GATE {'OK' if ok else 'FEJLER'}")
+    print(f"  ORIENTATION: axes={ap} comp={cp} subcube ratio={r:.3f}  GATE {'OK' if ok else 'FAILS'}")
     velC = np.stack([np.transpose(vel[c], ap) for c in range(3)])[list(cp)]
     return velC, ok
 
@@ -204,9 +204,9 @@ for path in files:
         u, v, w = vel
         om = np.stack([g(w,1)-g(v,2), g(u,2)-g(w,0), g(v,0)-g(u,1)]).astype(np.float32)
         rfull = _ratio_of(vel)
-        print(f"  KONTROL fuldfelt: <|S|2>/<|om|2> = {rfull:.3f}")
+        print(f"  CHECK full domain: <|S|2>/<|om|2> = {rfull:.3f}")
     else:
-        print("  ADVARSEL: vorticity-fil — kan ikke orienterings-kalibrere via identiteten; GATE=ukendt")
+        print("  WARNING: vorticity file — cannot orientation-calibrate via the identity; GATE=unknown")
         GATES[fname] = False
     process(om, fname, "real", vel)
     for s in range(SURR_REPS):
@@ -216,7 +216,7 @@ for path in files:
     del om, vel
 
 df = pd.DataFrame(rows); df.to_csv("rigidity_v5_events.csv", index=False)
-print(f"\nGemt rigidity_v5_events.csv  ({len(df)} events)")
+print(f"\nSaved rigidity_v5_events.csv  ({len(df)} events)")
 def ranksum_p(a, b):   # Mann-Whitney, normal-approx, tosidet (uden scipy)
     a, b = np.asarray(a), np.asarray(b); n1, n2 = len(a), len(b)
     if n1 < 5 or n2 < 5: return float("nan")
@@ -225,7 +225,7 @@ def ranksum_p(a, b):   # Mann-Whitney, normal-approx, tosidet (uden scipy)
     mu, sd = n1*n2/2, (n1*n2*(n1+n2+1)/12)**0.5
     from math import erf
     return 2*(1-0.5*(1+erf(abs((U-mu)/sd)/2**0.5)))
-print("\n=== MEKANISME-TEST: Theta ~ sigma_loc/ommax (fasebudgettets to arme) ===")
+print("\n=== AUXILIARY: Theta vs sigma_loc/ommax (partial correlations) ===")
 def pcorr(d, x, y, z):
     rxy, rxz, ryz = d[x].corr(d[y]), d[x].corr(d[z]), d[y].corr(d[z])
     den = ((1-rxz**2)*(1-ryz**2))**0.5
@@ -238,18 +238,17 @@ for f, sub in df.groupby("file"):
         print(f"{f} [{kind}]: corr(Th,sig/Phi)={s.Theta.corr(s.ratio):+.3f}  "
               f"partial(Th,sig|Phi)={pcorr(s,'Theta','sigma_loc','ommax'):+.3f}  "
               f"partial(Th,Phi|sig)={pcorr(s,'Theta','ommax','sigma_loc'):+.3f}  N={len(s)}")
-print("Forudsigelse [fasebudget]: real: partial(Th,sig|Phi)>0 OG partial(Th,Phi|sig)<0 ; surrogat: begge ~0.")
 print("\nGATE-STATUS:", GATES)
-if not all(GATES.values()): print(">>> MINDST EN FIL FEJLEDE GATEN — dens raekker er suspenderet. <<<")
-print("\n=== GAFLEN (v5, orienterings-korrigeret): real vs spektrum-matchet surrogat ===")
+if not all(GATES.values()): print(">>> AT LEAST ONE FILE FAILED THE GATE — its rows are suspended. <<<")
+print("\n=== Blockwise coherence: real vs spectrum-matched surrogate ===")
 for f, sub in df.groupby("file"):
     re_, su_ = sub[sub.kind=="real"], sub[sub.kind=="surrogat"]
     if len(su_) == 0: continue
     p = ranksum_p(re_.Theta, su_.Theta)
     d = re_.Theta.median() - su_.Theta.median()
-    verdict = "AKTIV defasning (real UNDER surrogat)" if (d < 0 and p < 0.05) else \
-              "fase-ORGANISERING (real OVER surrogat)" if (d > 0 and p < 0.05) else "ingen forskel = spektrum forklarer alt"
-    print(f"{f}: med Θ real={re_.Theta.median():.3f}  surrogat={su_.Theta.median():.3f}  Δ={d:+.3f}  p={p:.3g}  -> {verdict}")
+    verdict = "ACTIVE dephasing (real BELOW surrogate)" if (d < 0 and p < 0.05) else \
+              "phase ORGANISATION (real ABOVE surrogate)" if (d > 0 and p < 0.05) else "no difference — spectrum-level only"
+    print(f"{f}: median Theta real={re_.Theta.median():.3f}  surrogate={su_.Theta.median():.3f}  Δ={d:+.3f}  p={p:.3g}  -> {verdict}")
 def binom_p(k, n):  # tosidet sign-test, normal-approx (undgaar scipy)
     if n == 0: return float("nan")
     z = (k - n/2) / (0.5 * n**0.5)
@@ -260,14 +259,14 @@ for f, sub in df[df.kind=="real"].groupby("file"):
     corner = ((sub.Theta > qT) & ((1 - sub.A) > qD)).sum()
     nlow = int((sub.pnull > 0.5).sum())
     print(f"{f}: N={len(sub)}  corr(Theta,A)={sub.Theta.corr(sub.A):+.3f}  "
-          f"HJOERNE: obs={corner}/{len(sub)*0.01:.1f}  |  "
-          f"median pnull={sub.pnull.median():.3f}  andel UNDER null={nlow/len(sub):.1%}  sign-test p={binom_p(nlow, len(sub)):.2g}")
-print("\nLAESNING: median pnull > 0.5 og andel>50% => turbulens-Theta ligger UNDER tilfaeldige fortegn = AKTIV defasning.")
-print("          pnull ~ 0.5 => kun fravaer af laasning. pnull < 0.5 => delvis fase-organisering.")
+          f"CORNER: obs={corner}/{len(sub)*0.01:.1f}  |  "
+          f"median pnull={sub.pnull.median():.3f}  share BELOW null={nlow/len(sub):.1%}  sign-test p={binom_p(nlow, len(sub)):.2g}")
+print("\nREADING: median pnull > 0.5 and share > 50% => Theta lies BELOW random signs = active dephasing.")
+print("         pnull ~ 0.5 => no locking. pnull < 0.5 => partial phase organisation.")
 fig, ax = plt.subplots(figsize=(7, 5))
 for f, sub in df[df.kind=="real"].groupby("file"):
     ax.scatter(1 - sub.A, sub.Theta, s=10, alpha=.5, label=f.split(".")[0])
 ax.set_xlabel("1 − A  (afstand fra aksesymmetri)"); ax.set_ylabel("Theta (kerne-koherens)")
 ax.legend(fontsize=8); ax.set_title("Rigiditetstest: er hjoernet (hoej Theta, hoej 1−A) tomt?")
 fig.tight_layout(); plt.savefig("rigidity_v5_scatter.png", dpi=130)
-print("Gemt rigidity_v5_scatter.png — upload rigidity_v5_events.csv (+png) i chatten.")
+print("Saved rigidity_v5_scatter.png.")

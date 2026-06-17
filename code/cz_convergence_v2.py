@@ -1,51 +1,17 @@
 """
-==============================================================================
-FILNAVN:  cz_convergence.py
-GEM SOM:  C:/forskning/cz_convergence.py
+TURB-Rot radius campaign for the CZ-tightness study.
 
-ANACONDA PROMPT:
-  cd C:\forskning
-  python cz_convergence.py
+Exhaustive shell enumeration on two 256^3 periodic snapshots (velo_0.h5,
+velo_100.h5), spectral derivatives. For R_max in {32,48,64,80,96,112}:
+CZ capacity sigma_abs, realised |sigma_signed|, and tightness C_far at
+percentile bins P50 and P99.9 (200 targets per bin per snapshot).
 
-KRÆVER:   velo_0.h5 og velo_100.h5 i C:/forskning/
+Deterministic: SEED = 42 (+100 for the second snapshot). Includes a
+self-check that pooled aggregates match the deposited results file to
+print precision.
 
-v2 — DEPOSIT-UDGAVE:
-  Formaal: regenerere tab:comp/tab:conv's stoettedata til repo-deposit.
-  Tilfoejelser: (a) kapacitet s_abs og realiseret |s_sig| gemmes separat og
-  rapporteres som medianer per R_max (= tab:comp); (b) per-target CSV-dump
-  (cz_convergence_v2_targets.csv) = deposit-grade data; (c) reproduktions-
-  check mod de publicerede vaerdier.
-  PRAEREGISTRERING: SEED=42-deterministisk target-udvaelgelse paa ren
-  spektral pipeline => POOLED-vaerdier skal reproducere tab:comp/tab:conv
-  til print-praecision (sidste-decimal-drift fra biblioteksversioner
-  accepteres). Materiel afvigelse => undersoeges foer deposit.
-OUTPUT:   C:/forskning/cz_convergence_v2_results.txt
-
-EKSPERIMENT 2 — R_MAX KONVERGENS (publikationskvalitet)
-=========================================================
-Lukker trunkerings-indvendingen: viser at C_far-faldet ikke er en
-artefakt af integrationsdomaenets stoerrelse, men konvergerer inden
-domaenegraensen.
-
-FIX ift. cz_exhaustive.py:
-  Den tidligere konvergenstest brugte MARGIN = max(R_max)+4 = 132 paa
-  N=256 => tomt gyldigt indre omraade => IndexError.
-
-  TURB-Rot er PERIODISK. sigma_exhaustive bruger allerede %N.
-  Derfor: INGEN margin noedvendig for target-selektion (alle punkter
-  gyldige). Vi capper R_max ved 112 < N/2 = 128 for at undgaa
-  antipodal dobbelttaelling (2*112 = 224 < 256).
-
-EFFEKTIVITET:
-  For hvert target beregnes kernel-bidraget c[i] = T.omega_perp EN gang
-  ud til R=112 (~5.9M punkter). Derefter kumulative summer ved hver
-  R_max-cutoff via masking. ~5x hurtigere end at gentage per R_max.
-
-TEORETISK FORVENTNING:
-  C_far(P99.9) << C_far(P50) ved alle R_max (faldet er robust)
-  Begge konvergerer (flader ud) inden R_max = 112
-  => trunkerings-indvending lukket: resultatet vender ikke ved stoerre R
-==============================================================================
+Usage:   python cz_convergence_v2.py     (snapshots in working directory)
+Outputs: cz_convergence_v2_results.txt, cz_convergence_v2_targets.csv.
 """
 
 import numpy as np
@@ -55,9 +21,9 @@ import gc
 from pathlib import Path
 
 # ── CONFIG ───────────────────────────────────────────────────────────────────
-DATA_0   = "C:/forskning/velo_0.h5"
-DATA_100 = "C:/forskning/velo_100.h5"
-OUT_FILE = "C:/forskning/cz_convergence_v2_results.txt"
+DATA_0   = "velo_0.h5"
+DATA_100 = "velo_100.h5"
+OUT_FILE = "cz_convergence_v2_results.txt"
 
 N   = 256
 nu  = 0.012
@@ -103,7 +69,7 @@ def precompute_offsets(r_inner, r_outer):
 # LOAD + VORTICITY
 # ─────────────────────────────────────────────────────────────────────────────
 def load_and_compute(path):
-    out(f"\nLoader: {path}")
+    out(f"\nLoading: {path}")
     with h5py.File(path,'r') as f:
         u=np.zeros((3,N,N,N),dtype=np.float64)
         u[0]=f['PS3D/vx'][:]; u[1]=f['PS3D/vy'][:]; u[2]=f['PS3D/vz'][:]
@@ -138,7 +104,7 @@ def select_targets(omega_mag, seed, n_per_bin, percentiles):
         n = min(n_per_bin, len(cands))
         chosen = cands[rng.choice(len(cands), n, replace=False)]
         targets[p] = [(int(c[0]),int(c[1]),int(c[2])) for c in chosen]
-        out(f"  P{p:.1f}: {len(cands):,} kandidater → {n} targets  (Phi>{th:.2f})")
+        out(f"  P{p:.1f}: {len(cands):,} candidates -> {n} targets  (Phi>{th:.2f})")
     return targets
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -154,7 +120,7 @@ def kernel_contributions(omega, ix0, iy0, iz0, xi0, DX, DY, DZ, R5):
     cx=xi0[1]*rz-xi0[2]*ry; cy=xi0[2]*rx-xi0[0]*rz; cz=xi0[0]*ry-xi0[1]*rx
     fac=-3.0*xdr/(4.0*np.pi*R5)
     Tx=fac*cx; Ty=fac*cy; Tz=fac*cz
-    return Tx*opx+Ty*opy+Tz*opz   # c[i] for hver offset
+    return Tx*opx+Ty*opy+Tz*opz   # c[i] for each offset
 
 # ─────────────────────────────────────────────────────────────────────────────
 # BOOTSTRAP
@@ -167,14 +133,14 @@ def bootstrap_ci(vals, n_boot, seed):
     return float(np.median(arr)), float(np.percentile(meds,2.5)), float(np.percentile(meds,97.5))
 
 # ─────────────────────────────────────────────────────────────────────────────
-# KONVERGENSANALYSE
+# CONVERGENCE ANALYSIS
 # ─────────────────────────────────────────────────────────────────────────────
 def convergence(label, data_path, DX, DY, DZ, R, R5, seed_offset=0):
-    hdr(f"KONVERGENS: {label}")
+    hdr(f"CONVERGENCE: {label}")
     omega, omega_mag = load_and_compute(data_path)
     targets = select_targets(omega_mag, SEED+seed_offset, N_PER_BIN, PERCS_TEST)
 
-    # Precompute cutoff-masks for hver R_max
+    # Precompute cutoff masks for each R_max
     masks = {rmax: (R <= rmax) for rmax in R_MAX_LIST}
 
     # For hvert target: c[i] een gang, derefter kumulative summer
@@ -184,7 +150,7 @@ def convergence(label, data_path, DX, DY, DZ, R, R5, seed_offset=0):
 
     for p in PERCS_TEST:
         tlist = targets[p]
-        out(f"\n  Beregner P{p:.1f} ({len(tlist)} targets, {len(DX):,} punkter hver) ...")
+        out(f"\n  Computing P{p:.1f} ({len(tlist)} targets, {len(DX):,} points each) ...")
         t1=time.time()
         for ti,(ix0,iy0,iz0) in enumerate(tlist):
             if ti%50==0 and ti>0:
@@ -205,7 +171,7 @@ def convergence(label, data_path, DX, DY, DZ, R, R5, seed_offset=0):
                     res_sig[p][rmax].append(float(s_sig))
                     TARGET_ROWS.append((label,p,ix0,iy0,iz0,float(phi_t),rmax,
                                         float(s_abs),float(s_sig),float(s_sig/s_abs)))
-        out(f"    faerdig {time.time()-t1:.0f}s")
+        out(f"    done {time.time()-t1:.0f}s")
         save_now()
 
     del omega, omega_mag; gc.collect()
@@ -226,25 +192,25 @@ def report_components(res_abs, res_sig, label):
         out(f"  {rmax:>6} | {a50:>8.2f} {a99:>9.2f} | {s50:>8.2f} {s99:>9.2f}")
 
 def reproduction_check(res_comb, abs_comb, sig_comb):
-    hdr("REPRODUKTIONS-CHECK mod publicerede tab:comp/tab:conv (pooled)")
+    hdr("SELF-CHECK against deposited tab:comp/tab:conv aggregates (pooled)")
     ok=True
     for rmax in R_MAX_LIST:
         if rmax not in PUB_CONV: continue
         m50=np.median(res_comb[50.0][rmax]); m99=np.median(res_comb[99.9][rmax])
         p50,p99=PUB_CONV[rmax]
-        fl = "OK" if (abs(m50-p50)<0.002 and abs(m99-p99)<0.002) else "AFVIGELSE"
+        fl = "OK" if (abs(m50-p50)<0.002 and abs(m99-p99)<0.002) else "DEVIATION"
         if fl!="OK": ok=False
-        out(f"  tab:conv R={rmax:>3}: maalt {m50:.4f}/{m99:.4f}  publ {p50:.3f}/{p99:.3f}  [{fl}]")
+        out(f"  tab:conv R={rmax:>3}: measured {m50:.4f}/{m99:.4f}  ref {p50:.3f}/{p99:.3f}  [{fl}]")
         a50=np.median(abs_comb[50.0][rmax]); a99=np.median(abs_comb[99.9][rmax])
         s50=np.median(sig_comb[50.0][rmax]); s99=np.median(sig_comb[99.9][rmax])
         pa50,pa99,ps50,ps99=PUB_COMP[rmax]
-        fl2 = "OK" if (abs(a50-pa50)<0.05 and abs(a99-pa99)<0.05 and abs(s50-ps50)<0.02 and abs(s99-ps99)<0.02) else "AFVIGELSE"
+        fl2 = "OK" if (abs(a50-pa50)<0.05 and abs(a99-pa99)<0.05 and abs(s50-ps50)<0.02 and abs(s99-ps99)<0.02) else "DEVIATION"
         if fl2!="OK": ok=False
-        out(f"  tab:comp R={rmax:>3}: abs {a50:.2f}/{a99:.2f} (publ {pa50}/{pa99})  sig {s50:.2f}/{s99:.2f} (publ {ps50}/{ps99})  [{fl2}]")
-    out(f"\n  SAMLET: {'REPRODUCERET — deposit-data godkendt' if ok else 'AFVIGELSE FUNDET — undersoeg FOER deposit'}")
+        out(f"  tab:comp R={rmax:>3}: abs {a50:.2f}/{a99:.2f} (ref {pa50}/{pa99})  sig {s50:.2f}/{s99:.2f} (ref {ps50}/{ps99})  [{fl2}]")
+    out(f"\n  OVERALL: {'REPRODUCED — matches deposited aggregates' if ok else 'DEVIATION — investigate before use'}")
 
 def report(results, label):
-    hdr(f"C_far(R_max) — KONVERGENS: {label}")
+    hdr(f"C_far(R_max) — CONVERGENCE: {label}")
     out(f"\n  R_max    | shell-pts | " + " | ".join(f"P{p:.1f} C_far (95% CI)" for p in PERCS_TEST))
     out(f"  {'-'*8}-+-{'-'*9}-+-" + "-+-".join("-"*24 for _ in PERCS_TEST))
 
@@ -261,47 +227,39 @@ def report(results, label):
                 cells.append(f"{med:.4f} [{lo:.4f},{hi:.4f}]")
         out(f"  {rmax:>8} | ~{npts:>8,} | " + " | ".join(cells))
 
-    # Konvergens-check: relativ aendring mellem sidste to R_max
-    out(f"\n  KONVERGENS-CHECK (relativ aendring R_max=96 → 112):")
+    # Convergence check: relative change between the last two R_max
+    out(f"\n  CONVERGENCE CHECK (relative change R_max=96 -> 112):")
     for p in PERCS_TEST:
         v96 = results[p][96]; v112 = results[p][112]
         if v96 and v112:
             m96=np.median(v96); m112=np.median(v112)
             rel = abs(m112-m96)/max(m96,EPS)*100
-            flag = "KONVERGERET (<5%)" if rel<5 else "ikke konvergeret"
-            out(f"    P{p:.1f}: {m96:.4f} → {m112:.4f}  ({rel:.1f}% aendring)  [{flag}]")
+            flag = "CONVERGED (<5%)" if rel<5 else "not converged"
+            out(f"    P{p:.1f}: {m96:.4f} → {m112:.4f}  ({rel:.1f}% change)  [{flag}]")
 
-    # Separation hale vs moderat ved hver R_max
+    # Separation tail vs moderate at each R_max
     if 50.0 in PERCS_TEST and 99.9 in PERCS_TEST:
-        out(f"\n  SEPARATION (P50 vs P99.9) ved hver R_max:")
+        out(f"\n  SEPARATION (P50 vs P99.9) at each R_max:")
         for rmax in R_MAX_LIST:
             v50=results[50.0][rmax]; v99=results[99.9][rmax]
             if v50 and v99:
                 m50=np.median(v50); m99=np.median(v99)
                 out(f"    R_max={rmax:>3}: P50={m50:.4f}, P99.9={m99:.4f}, "
                     f"ratio={m99/max(m50,EPS):.3f}")
-    out(f"""
-  FORTOLKNING (Eksp 2 — trunkerings-indvending):
-    Hvis C_far flader ud inden R_max=112 => resultatet er ikke en
-    artefakt af integrationsdomaenet. En reviewer kan se at det ikke
-    ville vende ved stoerre R.
-    Hvis P99.9 < P50 ved ALLE R_max => faldet er robust paa tvaers af
-    cutoff og lever ikke kun i en bestemt skala.""")
-
-# ─────────────────────────────────────────────────────────────────────────────
+    # ─────────────────────────────────────────────────────────────────────────────
 # RUN
 # ─────────────────────────────────────────────────────────────────────────────
 t_total=time.time()
-hdr("CZ KONVERGENS — EKSPERIMENT 2 (publikationskvalitet)")
-out(f"  N={N}, nu={nu}, periodisk domaene (ingen margin)")
-out(f"  R_inner={R_INNER}, R_max-raekke={R_MAX_LIST}  (capped < N/2={N//2})")
+hdr("CZ CONVERGENCE — TURB-Rot RADIUS CAMPAIGN")
+out(f"  N={N}, nu={nu}, periodic domain (no margin)")
+out(f"  R_inner={R_INNER}, R_max series={R_MAX_LIST}  (capped < N/2={N//2})")
 out(f"  {N_PER_BIN} targets/bin, percentiler {PERCS_TEST}")
 out(f"  Bootstrap {N_BOOTSTRAP} resamples")
 save_now()
 
-out(f"\nPrecomputer offsets R={R_INNER}-{R_OUTER_MAX} ...")
+out(f"\nPrecomputing offsets R={R_INNER}-{R_OUTER_MAX} ...")
 DX,DY,DZ,R,R5 = precompute_offsets(R_INNER, R_OUTER_MAX)
-out(f"  {len(DX):,} punkter (genbruges via cutoff-masking for alle R_max)")
+out(f"  {len(DX):,} points (reused via cutoff masking for all R_max)")
 save_now()
 
 res_0, abs_0, sig_0 = convergence("t=0",   DATA_0,   DX,DY,DZ,R,R5, seed_offset=0)
@@ -313,7 +271,7 @@ report(res_100, "t=100"); report_components(abs_100, sig_100, "t=100")
 save_now()
 
 # Kombineret
-hdr("KOMBINERET (t=0 + t=100)")
+hdr("POOLED (t=0 + t=100)")
 res_comb = {p:{rmax: res_0[p][rmax]+res_100[p][rmax] for rmax in R_MAX_LIST} for p in PERCS_TEST}
 abs_comb = {p:{rmax: abs_0[p][rmax]+abs_100[p][rmax] for rmax in R_MAX_LIST} for p in PERCS_TEST}
 sig_comb = {p:{rmax: sig_0[p][rmax]+sig_100[p][rmax] for rmax in R_MAX_LIST} for p in PERCS_TEST}
@@ -321,14 +279,14 @@ report(res_comb, "kombineret"); report_components(abs_comb, sig_comb, "kombinere
 reproduction_check(res_comb, abs_comb, sig_comb)
 try:
     import csv as _csv
-    with open("C:/forskning/cz_convergence_v2_targets.csv","w",newline="") as fh:
+    with open("cz_convergence_v2_targets.csv","w",newline="") as fh:
         w=_csv.writer(fh)
         w.writerow(["snapshot","percentile","ix","iy","iz","omega_mag","R_max","sigma_abs","sigma_signed","C_far"])
         w.writerows(TARGET_ROWS)
-    out(f"\nSkrev cz_convergence_v2_targets.csv ({len(TARGET_ROWS)} raekker) — deposit-grade.")
+    out(f"\nWrote cz_convergence_v2_targets.csv ({len(TARGET_ROWS)} rows).")
 except Exception as e:
-    out(f"ADVARSEL: csv-dump fejlede: {e}")
+    out(f"WARNING: csv dump failed: {e}")
 
-hdr(f"KOMPLET — {time.time()-t_total:.0f} sek")
+hdr(f"COMPLETE — {time.time()-t_total:.0f} s")
 save_now()
-print(f"\nGemt: {OUT_FILE}")
+print(f"\nSaved: {OUT_FILE}")

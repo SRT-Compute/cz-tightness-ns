@@ -1,78 +1,23 @@
 """
-==============================================================================
-FILNAVN:  cz_reynolds_v5.py  —  ORIENTERINGS-KORRIGERET ARTIKEL-PIPELINE
-GEM SOM:  C:/forskning/cz_reynolds_v5.py
+JHTDB isotropic pipeline for the CZ-tightness study.
 
-BAGGRUND (praeregistreret foer data):
-  v1-v3 laeste JHTDB-cutouts (z,y,x) som (x,y,z) (transpose-signaturen, ingen
-  div/identitets-check). ALLE artiklens JHTDB-tal er dermed beregnet paa
-  forvredne felter. v4 = v3 + orienterings-autokalibrering (identiteten
-  <|S|2>/<|om|2>=0.5) efter HVER hentning + gate-suspension per cutout +
-  LOKAL TILSTAND (koer paa lokale .h5 uden netvaerk:
-      python cz_reynolds_v4.py jhtdb_iso_re433.h5 [re611] [re1300]).
-  Maalekernen er uaendret fra v3 (artiklens protokol).
+On 4 x 256^3 velocity cutouts per dataset (Re_lambda 433 / 611 / 1300):
+  - tightness C_far = |sigma_far| / sigma_far_abs at R/eta in {25,35,50,60}
+  - capacity and realised medians per shell (radius-resolved components)
+  - near/far partition |sigma_far| / |sigma_total| at R/eta = 60
+Targets: 500 per percentile bin (P50, P99.9) per cutout; pooled per dataset.
 
-v5-UDVIDELSER (til artiklens resterende isotrope tabeller):
-  1) sigma_total = xi0^T S(x0) xi0 ved target (centrale differenser paa u)
-     -> near/far-andel |sigma_far|/|sigma_total| ved R/eta=60 (tab:nearfar).
-  2) RETA_CUTOFFS udvidet med 60.0 (artiklens band [17,60]).
-  3) Kapacitet (s_abs) og realiseret (|s_sig|) medianer per R/eta og percentil
-     -> radius-oploest vaekst/saturation paa korrigerede data.
-  PRAEREGISTRERING (nearfar): affected vaerdier var P50 0.32/0.34/0.30,
-  P99.9 0.18/0.15/0.14. Near-field-dominans staar hvis korrigeret andel
-  forbliver < 0.5; F-1-organisering kan HAEVE den signede tail-andel —
-  retningen er aaben. Residual-vaekst: realiseret median vs R/eta
-  monotont stigende => 'weak residual growth' genindsaettes; flad => saturation.
+Every cutout passes orientation verification against the incompressibility
+identity <|S|^2>/<|omega|^2> = 1/2, evaluated over all 36 axis/component
+permutations on a central subcube; admission gate [0.45, 0.55].
 
-  SAMMENLIGNINGSGRUNDLAG (artiklens AFFECTED JHTDB-vaerdier, Re_lambda=433):
-    Tabel 2 pooled: kapacitet 0.035, signed 0.0044, ratio 8.0, C_far 0.125.
-    Abstract-baand: ratio 8-11 (nedre graense = JHTDB).
-  PRAEREGISTREREDE BAAND for korrigeret C_far/ratio:
-    A) C_far inden for +/-30% af 0.125 og ratio >= 5:
-       JHTDB-benet kvantitativt robust -> rettede tabeller, konklusion uaendret.
-    B) C_far hoejere (svagere cancellation), ratio 2-5:
-       benet svaekkes, hovedkonklusionen (kapacitet >> realiseret) staar;
-       abstract-baandet omskrives; proaktiv korrigeret version SKAL sendes.
-    C) ratio < 2 eller C_far > 0.5:
-       JHTDB degraderes fra validering til diskussion / artiklen hviler paa
-       TURB-Rot alene; stoerre revision.
-    TREND: hvis korrigeret C_far STIGER mod 1 ved hoej intensitet, modsiger
-    det abstractets faldende trend og skal rettes uanset niveau.
-  BEMAERK: baade eps_local og |omega|-percentil-targets var paavirket af
-  fejlen (S2 inflateret, omega2 deflateret) — alle tal kan flytte sig.
+Modes:
+  python cz_reynolds_v5.py                                  # fetch cutouts via JHTDB API
+  python cz_reynolds_v5.py re433.h5 [re611.h5 re1300.h5]    # local files
+API mode requires a JHTDB auth token (JHTDB_TOKEN below).
+Deterministic: SEED = 42 + Re_lambda (cutout origins, target selection).
 
-ANACONDA PROMPT:
-  cd C:\forskning
-  python cz_reynolds_v3.py
-
-KRÆVER:   internetadgang + JHTDB-token (verificeret virkende)
-OUTPUT:   C:/forskning/cz_reynolds_v5_results.txt
-
-EKSPERIMENT 4 v3 — TRE Re-PUNKTER (faktor-3 spaend)
-====================================================
-Tilfoejer isotropic8192 (Re_lambda~1300) til v2's 433 og 611.
-Samme flowtype (forced isotropic), nu Re_lambda = 433 -> 611 -> 1300.
-
-Datasaet (GLOBALE publicerede vaerdier):
-  isotropic1024coarse: Re=433,  nu=1.85e-4,  eta=2.873e-3  (eta/dx=0.468)
-  isotropic4096:        Re=611,  nu=1.732e-4, eta=1.384e-3  (eta/dx=0.902)
-  isotropic8192:        Re~1300, nu=4.385e-5, eta=5.00e-4   (eta/dx=0.652)
-                        snapshots 0-4 alle Re~1257-1301; bruger en af dem.
-
-DESIGN (uaendret fra v2 — det troværdige grundlag):
-  - 4 tilfaeldigt placerede 256^3 cutouts/datasaet, targets pooled
-  - GLOBAL eta til fast R/eta-konvertering (ikke lokal cutout-eta)
-  - FD-vorticity, udtømmende enumeration
-  - C_far ved fast R/eta [25,35,50], inner R/eta=17
-  - P50 og P99.9, bootstrap CI
-  - eps-krydscheck + CI-overlap check
-
-TIDSPROBE: isotropic8192 indekseres (som 4096 brugte t=1). Probe [1,2,3,4]
-           — alle Re~1300 uanset 0/1-indeksering. Foerste der virker bruges.
-
-Robust maal: ratio C_far(P99.9)/C_far(P50) over de tre Re. Hvis ~konstant
-og CI'er overlapper => intensitets-faldet er Re-universelt over faktor-3.
-==============================================================================
+Outputs: cz_reynolds_v5_results.txt, cz_v5_targets.csv.
 """
 
 import sys, subprocess, time, gc
@@ -94,7 +39,7 @@ import h5py
 
 # ── CONFIG ───────────────────────────────────────────────────────────────────
 JHTDB_TOKEN = "YOUR_JHTDB_TOKEN_HERE"  # obtain at https://turbulence.pha.jhu.edu
-OUT_FILE    = "C:/forskning/cz_reynolds_v5_results.txt"
+OUT_FILE    = "cz_reynolds_v5_results.txt"
 
 DATASETS = [
     {"title":"isotropic1024coarse","Re_lambda":433,"nu":1.85e-4,"N_full":1024,
@@ -128,7 +73,7 @@ def save_now():
 
 # ─────────────────────────────────────────────────────────────────────────────
 def get_dataset(title):
-    return turb_dataset(dataset_title=title, output_path="C:/forskning",
+    return turb_dataset(dataset_title=title, output_path=".",
                         auth_token=JHTDB_TOKEN)
 
 def download_cube(ds, t, start, sz):
@@ -160,8 +105,8 @@ def _ratio_of(vel):
     return S2/float((om**2).sum(0).mean())
 
 def calibrate_orientation(vel):
-    """36 (akse-perm x komp-perm) paa subkube; vaelg ratio naermest 0.5.
-    Gate [0.45,0.55] paa subkube, fallback fuldfelt (jf. rigidity v5-laeren)."""
+    """36 (axis-perm x comp-perm) on a central subcube; pick ratio closest to 0.5.
+    Gate [0.45,0.55] on a central subcube, full-domain fallback."""
     from itertools import permutations
     N=vel.shape[1]; c0=N//2; h=min(48,c0-2)
     sub=vel[:,c0-h:c0+h,c0-h:c0+h,c0-h:c0+h].astype(np.float32)
@@ -177,9 +122,9 @@ def calibrate_orientation(vel):
     if not ok:
         rf=_ratio_of(velC)
         ok=0.45<=rf<=0.55
-        info=f"akse={ap} komp={cp} subkube={r:.3f} fuldfelt={rf:.3f}"
+        info=f"axes={ap} comp={cp} subcube={r:.3f} fullfield={rf:.3f}"
     else:
-        info=f"akse={ap} komp={cp} subkube={r:.3f}"
+        info=f"axes={ap} comp={cp} subcube={r:.3f}"
     return velC,ok,info
 
 def load_local(path):
@@ -188,12 +133,12 @@ def load_local(path):
         f.visit(lambda n: ks.add(n) if hasattr(f[n],"shape") else None)
         if {"u","v","w"}<=ks: names=["u","v","w"]
         elif {"PS3D/vx","PS3D/vy","PS3D/vz"}<=ks: names=["PS3D/vx","PS3D/vy","PS3D/vz"]
-        else: raise ValueError(f"ukendte datasets: {sorted(ks)[:6]}")
+        else: raise ValueError(f"unknown datasets: {sorted(ks)[:6]}")
         return np.stack([f[n][:].astype(np.float64) for n in names])
 
 def probe_time(ds, title, candidates):
     """Find foerste gyldige tidsindeks ved at hente en lille 16^3 cutout."""
-    out(f"  Tidsprobe for {title} (kandidater {candidates}) ...")
+    out(f"  Time probe for {title} (candidates {candidates}) ...")
     for t in candidates:
         try:
             u=download_cube(ds,t,(100,100,100),16)
@@ -202,7 +147,7 @@ def probe_time(ds, title, candidates):
             return t
         except Exception as e:
             msg=str(e)[:150]
-            out(f"    t={t}: fejl ({msg})")
+            out(f"    t={t}: error ({msg})")
     return None
 
 def vorticity_fd(u, dx):
@@ -244,14 +189,14 @@ def bootstrap_ci(vals,n_boot,seed):
 def analyse_dataset(spec):
     title=spec["title"];Re=spec["Re_lambda"];nu=spec["nu"];Nfull=spec["N_full"]
     eta_g=spec["eta_global"];eps_g=spec["eps_global"]
-    hdr(f"DATASAET: {title}  (Re_lambda={Re})")
+    hdr(f"DATASET: {title}  (Re_lambda={Re})")
     dx=2.0*np.pi/Nfull
     eta_over_dx=eta_g/dx
     out(f"  GLOBAL eta={eta_g:.4e}  dx={dx:.4e}  eta/dx={eta_over_dx:.4f}")
 
     locals_=[f for f in LOCAL_FILES if str(Re) in f]
     if LOCAL_FILES and not locals_:
-        out("  LOKAL TILSTAND: ingen matchende fil for dette datasaet — springer over.")
+        out("  LOCAL MODE: no matching file for this dataset — skipping.")
         return None
     ds=None if locals_ else get_dataset(title)
 
@@ -263,9 +208,9 @@ def analyse_dataset(spec):
     else:
         t_use=probe_time(ds,title,spec["time_candidates"])
         if t_use is None:
-            out(f"  INGEN gyldig tid fundet for {title}. Springer over.")
+            out(f"  No valid time found for {title} — skipping.")
             return None
-        out(f"  Bruger t={t_use}")
+        out(f"  Using t={t_use}")
 
     r_in_grid=RETA_INNER*eta_over_dx
     r_out_grid=max(RETA_CUTOFFS)*eta_over_dx
@@ -273,15 +218,15 @@ def analyse_dataset(spec):
     out(f"  R/eta [{RETA_INNER},{max(RETA_CUTOFFS)}] => grid [{r_in_grid:.1f},{r_out_grid:.1f}], margin={margin}")
     DX,DY,DZ,R,R5=precompute_offsets(r_in_grid,r_out_grid)
     cut_masks={X:(R<=X*eta_over_dx) for X in RETA_CUTOFFS}
-    out(f"  shell-punkter: {len(DX):,}")
+    out(f"  shell points: {len(DX):,}")
 
     rng=np.random.default_rng(SEED+Re)
     max_origin=Nfull-N_CUBE
     origins=[tuple(int(v) for v in rng.integers(0,max_origin+1,size=3)) for _ in range(N_CUTOUTS)]
-    out(f"  {N_CUTOUTS} cutout-origins: {origins}")
+    out(f"  {N_CUTOUTS} cutout origins: {origins}")
     if locals_:
         origins=locals_
-        out(f"  LOKAL TILSTAND: {len(origins)} fil(er) i stedet for API-cutouts: {origins}")
+        out(f"  LOCAL MODE: {len(origins)} file(s) instead of API cutouts: {origins}")
 
     pooled={p:{X:[] for X in RETA_CUTOFFS} for p in PERCS_TEST}
     pooled_abs={p:{X:[] for X in RETA_CUTOFFS} for p in PERCS_TEST}
@@ -295,12 +240,12 @@ def analyse_dataset(spec):
         try:
             u=load_local(origin) if locals_ else download_cube(ds,t_use,origin,N_CUBE)
         except Exception as e:
-            out(f"    hent/laes FEJL: {str(e)[:200]}"); continue
+            out(f"    fetch/read ERROR: {str(e)[:200]}"); continue
         u,gate_ok,ginfo=calibrate_orientation(u)
-        out(f"    ORIENTERING: {ginfo}  GATE {'OK' if gate_ok else 'FEJLER'}")
+        out(f"    ORIENTATION: {ginfo}  GATE {'OK' if gate_ok else 'FAILS'}")
         GATES.append((title,str(origin),gate_ok))
         if not gate_ok:
-            out("    GATE FEJLER -> cutout SUSPENDERET."); del u; gc.collect(); continue
+            out("    GATE FAILS -> cutout SUSPENDED."); del u; gc.collect(); continue
         omega,omega_mag=vorticity_fd(u,dx)
         eps_local=nu*np.mean(omega_mag**2)
         eps_list.append(eps_local)
@@ -327,7 +272,7 @@ def analyse_dataset(spec):
                 phi_t=np.linalg.norm(om0)
                 if phi_t<EPS: continue
                 xi0v=om0/phi_t
-                # sigma_total = xi0^T S(x0) xi0, centrale differenser paa u
+                # sigma_total = xi0^T S(x0) xi0, central differences on u
                 G=np.empty((3,3))
                 for a in range(3):
                     ip=[ix0,iy0,iz0]; im=[ix0,iy0,iz0]; ip[a]+=1; im[a]-=1
@@ -355,18 +300,17 @@ def analyse_dataset(spec):
 
     if eps_list:
         eps_mean=np.mean(eps_list)
-        out(f"\n  KRYDSCHECK eps: middel over {len(eps_list)} cutouts = {eps_mean:.4f} "
+        out(f"\n  CROSS-CHECK eps: mean over {len(eps_list)} cutouts = {eps_mean:.4f} "
             f"(global {eps_g})  ratio {eps_mean/eps_g:.2f}")
         out(f"    per cutout: {[f'{e:.4f}' for e in eps_list]}")
     return {"title":title,"Re":Re,"eta_over_dx":eta_over_dx,
             "pooled":pooled,"pooled_abs":pooled_abs,"pooled_sig":pooled_sig,
             "pooled_nf":pooled_nf,"eps_mean":np.mean(eps_list) if eps_list else None}
 
-AFFECTED_NF={433:(0.322,0.182),611:(0.338,0.149),1300:(0.295,0.142)}
 def report_v5(data):
     Re=data["Re"]
-    hdr(f"v5-UDVIDELSER — {data['title']} (Re={Re})")
-    out("  Kapacitet s_abs og realiseret |s_sig| (medianer, grid-enheds-integral):")
+    hdr(f"COMPONENTS AND NEAR/FAR — {data['title']} (Re={Re})")
+    out("  Capacity s_abs and realised |s_sig| (medians, grid-unit integral):")
     out(f"   {'R/eta':>6} | {'abs P50':>9} {'abs P99.9':>10} | {'sig P50':>9} {'sig P99.9':>10} | {'C_far P50':>9}")
     sigP50=[]
     for X in RETA_CUTOFFS:
@@ -378,23 +322,20 @@ def report_v5(data):
         sigP50.append(s50)
         out(f"   {X:>6.0f} | {a50:>9.3f} {a99:>10.3f} | {s50:>9.4f} {s99:>10.4f} | {c50:>9.4f}")
     if all(np.isfinite(sigP50)) and len(sigP50)>=3:
-        mono="MONOTONT STIGENDE" if all(sigP50[i]<sigP50[i+1] for i in range(len(sigP50)-1)) else "IKKE monotont (saturation/flad?)"
-        out(f"  Residual-vaekst-check (realiseret P50 vs R/eta): {mono}  "
-            f"(rel. aendring sidste trin: {(sigP50[-1]-sigP50[-2])/max(sigP50[-2],1e-12)*100:.1f}%)")
+        mono="MONOTONE INCREASING" if all(sigP50[i]<sigP50[i+1] for i in range(len(sigP50)-1)) else "not monotone (saturation/flat)"
+        out(f"  Realised-median growth (P50 vs R/eta): {mono}  "
+            f"(relative change, last step: {(sigP50[-1]-sigP50[-2])/max(sigP50[-2],1e-12)*100:.1f}%)")
     out("")
-    out("  NEAR/FAR-ANDEL |sigma_far|/|sigma_total| ved R/eta=60:")
+    out("  NEAR/FAR SHARE |sigma_far|/|sigma_total| at R/eta=60:")
     for p in PERCS_TEST:
         v=data['pooled_nf'][p]
         if v:
             med,lo,hi=bootstrap_ci(v,N_BOOTSTRAP,SEED+int(p*10))
-            aff=AFFECTED_NF.get(Re,(None,None))[0 if p==50.0 else 1]
-            cmp_=f"  (AFFECTED var {aff:.3f})" if aff else ""
-            out(f"    P{p:g}: median={med:.3f} [{lo:.3f},{hi:.3f}]  N={len(v)}{cmp_}")
-    out("  Dom: near-field-dominans staar hvis andel < 0.5; retning vs AFFECTED aaben (praereg. i header).")
+            out(f"    P{p:g}: median={med:.3f} [{lo:.3f},{hi:.3f}]  N={len(v)}")
     return None
 
 def report(data):
-    hdr(f"C_far ved fast R/eta — {data['title']} (Re={data['Re']})")
+    hdr(f"C_far at fixed R/eta — {data['title']} (Re={data['Re']})")
     out(f"  eta/dx={data['eta_over_dx']:.4f}")
     out(f"\n  {'R/eta':>6} | {'N':>5} | {'P50 C_far [95% CI]':>27} | {'P99.9 C_far [95% CI]':>27} | {'ratio':>7}")
     out(f"  {'-'*6}-+-{'-'*5}-+-{'-'*27}-+-{'-'*27}-+-{'-'*7}")
@@ -411,8 +352,8 @@ def report(data):
 
 # ─────────────────────────────────────────────────────────────────────────────
 t_total=time.time()
-hdr("CZ Re-SKALERING v3 — TRE Re-PUNKTER (433, 611, 1300)")
-out(f"  {N_CUTOUTS} cutouts/datasaet, {N_CUBE}^3, {N_PER_BIN_CUTOUT} targets/bin/cutout")
+hdr("CZ TIGHTNESS ACROSS Re — THREE DATASETS (433, 611, 1300)")
+out(f"  {N_CUTOUTS} cutouts/dataset, {N_CUBE}^3, {N_PER_BIN_CUTOUT} targets/bin/cutout")
 out(f"  R/eta inner={RETA_INNER}, cutoffs={RETA_CUTOFFS}, bootstrap {N_BOOTSTRAP}")
 save_now()
 
@@ -425,10 +366,10 @@ for spec in DATASETS:
             report_v5(data)
         save_now()
     except Exception as e:
-        out(f"\n  FEJL i {spec['title']}: {type(e).__name__}: {str(e)[:300]}")
+        out(f"\n  ERROR in {spec['title']}: {type(e).__name__}: {str(e)[:300]}")
         save_now()
 
-hdr("Re-SAMMENLIGNING: intensitets-fald over faktor-3 i Re")
+hdr("Re COMPARISON: intensity dependence across factor 3 in Re")
 out(f"\n  Ratio C_far(P99.9)/C_far(P50):")
 Res=sorted(summaries.keys())
 out(f"\n  {'R/eta':>6} | " + " | ".join(f"Re={Re:>5}" for Re in Res))
@@ -438,7 +379,7 @@ for X in RETA_CUTOFFS:
     out(f"  {X:>6.0f} | " + " | ".join(f"{c:>8}" for c in cells))
 
 # Absolutte P99.9 C_far over Re (Re-universalitet)
-out(f"\n  Absolut C_far(P99.9) ved fast R/eta over Re:")
+out(f"\n  Absolute C_far(P99.9) at fixed R/eta across Re:")
 out(f"\n  {'R/eta':>6} | " + " | ".join(f"Re={Re:>5}" for Re in Res))
 for X in RETA_CUTOFFS:
     cells=[f"{summaries[Re][X][1]:.4f}" if X in summaries[Re] else "--" for Re in Res]
@@ -457,34 +398,20 @@ for X in RETA_CUTOFFS:
                 out(f"      Re{Ra} [{la:.4f},{ha:.4f}] vs Re{Rb} [{lb:.4f},{hb:.4f}] => "
                     f"{'OVERLAP' if ov else 'ADSKILT'}")
 
-out(f"""
-  FORTOLKNING (faktor-3 i Re_lambda: 433 -> 1300):
-    - ratio < 1 ved alle Re => intensitets-faldet er reelt.
-    - ratio ~konstant + CI-overlap over alle tre Re => Re-UNIVERSELT.
-      Loefter til 'intensitets-betinget tendens robust over faktor-3 i Re'.
-    - systematisk trend i ratio med Re => reel Re-afhaengighed.
-    eps middel ~0.5x global ved alle (intermittens-undersampling), ens
-    bias => fair sammenligning. Global eta brugt => korrekt R/eta.""")
-
 try:
     import csv as _csv
-    with open("C:/forskning/cz_v5_targets.csv","w",newline="") as fh:
+    with open("cz_v5_targets.csv","w",newline="") as fh:
         w=_csv.writer(fh)
         w.writerow(["dataset","Re_lambda","cutout","origin","percentile","R_eta",
                     "ix","iy","iz","omega_mag","sigma_total","sigma_abs","sigma_signed","C_far"])
         w.writerows(TARGET_ROWS)
-    out(f"\nSkrev cz_v5_targets.csv ({len(TARGET_ROWS)} raekker) — deposit-grade per-target data.")
+    out(f"\nWrote cz_v5_targets.csv ({len(TARGET_ROWS)} rows).")
 except Exception as e:
-    out(f"\nADVARSEL: kunne ikke skrive targets-csv: {e}")
-hdr("GATE-STATUS (alle cutouts)")
-for g in GATES: out(f"  {g[0]} @ {g[1]}: {'OK' if g[2] else 'SUSPENDERET'}")
+    out(f"\nWARNING: could not write targets csv: {e}")
+hdr("GATE STATUS (all cutouts)")
+for g in GATES: out(f"  {g[0]} @ {g[1]}: {'OK' if g[2] else 'SUSPENDED'}")
 if GATES and not all(g[2] for g in GATES):
-    out("  >>> Suspenderede cutouts indgaar IKKE i pooled-tal. <<<")
-hdr("ARTIKEL-SAMMENLIGNING (Re_lambda=433)")
-out("  AFFECTED (artiklen, Tabel 2): ratio 8.0, C_far 0.125")
-out("  Korrigerede vaerdier: aflaes P50/P99.9 C_far pr. R/eta ovenfor og doem")
-out("  efter de praeregistrerede baand A/B/C i headeren. Trend-checket:")
-out("  stiger C_far mod 1 ved P99.9, modsiger det abstractets faldende trend.")
-hdr(f"KOMPLET — {time.time()-t_total:.0f} sek")
+    out("  >>> Suspended cutouts are NOT included in pooled values. <<<")
+hdr(f"COMPLETE — {time.time()-t_total:.0f} s")
 save_now()
-print(f"\nGemt: {OUT_FILE}")
+print(f"\nSaved: {OUT_FILE}")
