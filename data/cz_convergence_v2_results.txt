@@ -1,35 +1,35 @@
 ======================================================================
-CZ KONVERGENS — EKSPERIMENT 2 (publikationskvalitet)
+CZ CONVERGENCE — TURB-Rot RADIUS CAMPAIGN
 ======================================================================
-  N=256, nu=0.012, periodisk domaene (ingen margin)
-  R_inner=8, R_max-raekke=[32, 48, 64, 80, 96, 112]  (capped < N/2=128)
+  N=256, nu=0.012, periodic domain (no margin)
+  R_inner=8, R_max series=[32, 48, 64, 80, 96, 112]  (capped < N/2=128)
   200 targets/bin, percentiler [50.0, 99.9]
   Bootstrap 2000 resamples
 
-Precomputer offsets R=8-112 ...
-  5,881,830 punkter (genbruges via cutoff-masking for alle R_max)
+Precomputing offsets R=8-112 ...
+  5,881,830 points (reused via cutoff masking for all R_max)
 ======================================================================
-KONVERGENS: t=0
+CONVERGENCE: t=0
 ======================================================================
 
-Loader: C:/forskning/velo_0.h5
+Loading: velo_0.h5
   |omega| median=14.8736  max=319.4164
-  P50.0: 8,371,830 kandidater → 200 targets  (Phi>14.87)
-  P99.9: 16,778 kandidater → 200 targets  (Phi>137.33)
+  P50.0: 8,371,830 candidates -> 200 targets  (Phi>14.87)
+  P99.9: 16,778 candidates -> 200 targets  (Phi>137.33)
 
-  Beregner P50.0 (200 targets, 5,881,830 punkter hver) ...
-    target 50/200 (ETA ~144s)
+  Computing P50.0 (200 targets, 5,881,830 points each) ...
+    target 50/200 (ETA ~141s)
     target 100/200 (ETA ~94s)
     target 150/200 (ETA ~47s)
-    faerdig 186s
+    done 186s
 
-  Beregner P99.9 (200 targets, 5,881,830 punkter hver) ...
-    target 50/200 (ETA ~145s)
-    target 100/200 (ETA ~97s)
-    target 150/200 (ETA ~48s)
-    faerdig 191s
+  Computing P99.9 (200 targets, 5,881,830 points each) ...
+    target 50/200 (ETA ~141s)
+    target 100/200 (ETA ~92s)
+    target 150/200 (ETA ~46s)
+    done 183s
 ======================================================================
-C_far(R_max) — KONVERGENS: t=0
+C_far(R_max) — CONVERGENCE: t=0
 ======================================================================
 
   R_max    | shell-pts | P50.0 C_far (95% CI) | P99.9 C_far (95% CI)
@@ -41,26 +41,19 @@ C_far(R_max) — KONVERGENS: t=0
         96 | ~3,703,828 | 0.0866 [0.0742,0.0962] | 0.0508 [0.0409,0.0581]
        112 | ~5,882,803 | 0.0829 [0.0689,0.0925] | 0.0480 [0.0397,0.0558]
 
-  KONVERGENS-CHECK (relativ aendring R_max=96 → 112):
-    P50.0: 0.0866 → 0.0829  (4.4% aendring)  [KONVERGERET (<5%)]
-    P99.9: 0.0508 → 0.0480  (5.6% aendring)  [ikke konvergeret]
+  CONVERGENCE CHECK (relative change R_max=96 -> 112):
+    P50.0: 0.0866 → 0.0829  (4.4% change)  [CONVERGED (<5%)]
+    P99.9: 0.0508 → 0.0480  (5.6% change)  [not converged]
 
-  SEPARATION (P50 vs P99.9) ved hver R_max:
+  SEPARATION (P50 vs P99.9) at each R_max:
     R_max= 32: P50=0.1094, P99.9=0.0768, ratio=0.703
     R_max= 48: P50=0.0978, P99.9=0.0638, ratio=0.653
     R_max= 64: P50=0.0916, P99.9=0.0580, ratio=0.634
     R_max= 80: P50=0.0913, P99.9=0.0537, ratio=0.588
     R_max= 96: P50=0.0866, P99.9=0.0508, ratio=0.587
     R_max=112: P50=0.0829, P99.9=0.0480, ratio=0.579
-
-  FORTOLKNING (Eksp 2 — trunkerings-indvending):
-    Hvis C_far flader ud inden R_max=112 => resultatet er ikke en
-    artefakt af integrationsdomaenet. En reviewer kan se at det ikke
-    ville vende ved stoerre R.
-    Hvis P99.9 < P50 ved ALLE R_max => faldet er robust paa tvaers af
-    cutoff og lever ikke kun i en bestemt skala.
 ======================================================================
-KOMPONENTER (tab:comp) — t=0
+COMPONENTS (tab:comp) — t=0
 ======================================================================
    R_max |  abs P50 abs P99.9 |  sig P50 sig P99.9
       32 |    11.76     20.70 |     1.29      1.55
@@ -70,27 +63,27 @@ KOMPONENTER (tab:comp) — t=0
       96 |    21.27     30.87 |     1.83      1.51
      112 |    22.66     32.20 |     1.87      1.52
 ======================================================================
-KONVERGENS: t=100
+CONVERGENCE: t=100
 ======================================================================
 
-Loader: C:/forskning/velo_100.h5
+Loading: velo_100.h5
   |omega| median=15.1412  max=350.1673
-  P50.0: 8,371,830 kandidater → 200 targets  (Phi>15.14)
-  P99.9: 16,778 kandidater → 200 targets  (Phi>126.66)
+  P50.0: 8,371,830 candidates -> 200 targets  (Phi>15.14)
+  P99.9: 16,778 candidates -> 200 targets  (Phi>126.66)
 
-  Beregner P50.0 (200 targets, 5,881,830 punkter hver) ...
-    target 50/200 (ETA ~136s)
-    target 100/200 (ETA ~91s)
-    target 150/200 (ETA ~45s)
-    faerdig 182s
+  Computing P50.0 (200 targets, 5,881,830 points each) ...
+    target 50/200 (ETA ~137s)
+    target 100/200 (ETA ~92s)
+    target 150/200 (ETA ~46s)
+    done 184s
 
-  Beregner P99.9 (200 targets, 5,881,830 punkter hver) ...
+  Computing P99.9 (200 targets, 5,881,830 points each) ...
     target 50/200 (ETA ~137s)
     target 100/200 (ETA ~91s)
-    target 150/200 (ETA ~45s)
-    faerdig 182s
+    target 150/200 (ETA ~46s)
+    done 184s
 ======================================================================
-C_far(R_max) — KONVERGENS: t=100
+C_far(R_max) — CONVERGENCE: t=100
 ======================================================================
 
   R_max    | shell-pts | P50.0 C_far (95% CI) | P99.9 C_far (95% CI)
@@ -102,26 +95,19 @@ C_far(R_max) — KONVERGENS: t=100
         96 | ~3,703,828 | 0.0765 [0.0648,0.0877] | 0.0576 [0.0498,0.0681]
        112 | ~5,882,803 | 0.0727 [0.0619,0.0853] | 0.0538 [0.0473,0.0655]
 
-  KONVERGENS-CHECK (relativ aendring R_max=96 → 112):
-    P50.0: 0.0765 → 0.0727  (5.0% aendring)  [ikke konvergeret]
-    P99.9: 0.0576 → 0.0538  (6.5% aendring)  [ikke konvergeret]
+  CONVERGENCE CHECK (relative change R_max=96 -> 112):
+    P50.0: 0.0765 → 0.0727  (5.0% change)  [not converged]
+    P99.9: 0.0576 → 0.0538  (6.5% change)  [not converged]
 
-  SEPARATION (P50 vs P99.9) ved hver R_max:
+  SEPARATION (P50 vs P99.9) at each R_max:
     R_max= 32: P50=0.1120, P99.9=0.0875, ratio=0.782
     R_max= 48: P50=0.0994, P99.9=0.0752, ratio=0.757
     R_max= 64: P50=0.0874, P99.9=0.0649, ratio=0.742
     R_max= 80: P50=0.0801, P99.9=0.0603, ratio=0.752
     R_max= 96: P50=0.0765, P99.9=0.0576, ratio=0.752
     R_max=112: P50=0.0727, P99.9=0.0538, ratio=0.740
-
-  FORTOLKNING (Eksp 2 — trunkerings-indvending):
-    Hvis C_far flader ud inden R_max=112 => resultatet er ikke en
-    artefakt af integrationsdomaenet. En reviewer kan se at det ikke
-    ville vende ved stoerre R.
-    Hvis P99.9 < P50 ved ALLE R_max => faldet er robust paa tvaers af
-    cutoff og lever ikke kun i en bestemt skala.
 ======================================================================
-KOMPONENTER (tab:comp) — t=100
+COMPONENTS (tab:comp) — t=100
 ======================================================================
    R_max |  abs P50 abs P99.9 |  sig P50 sig P99.9
       32 |    11.98     18.38 |     1.26      1.60
@@ -131,10 +117,10 @@ KOMPONENTER (tab:comp) — t=100
       96 |    21.71     28.54 |     1.68      1.66
      112 |    23.10     29.87 |     1.68      1.66
 ======================================================================
-KOMBINERET (t=0 + t=100)
+POOLED (t=0 + t=100)
 ======================================================================
 ======================================================================
-C_far(R_max) — KONVERGENS: kombineret
+C_far(R_max) — CONVERGENCE: kombineret
 ======================================================================
 
   R_max    | shell-pts | P50.0 C_far (95% CI) | P99.9 C_far (95% CI)
@@ -146,26 +132,19 @@ C_far(R_max) — KONVERGENS: kombineret
         96 | ~3,703,828 | 0.0833 [0.0732,0.0909] | 0.0531 [0.0475,0.0607]
        112 | ~5,882,803 | 0.0795 [0.0673,0.0855] | 0.0513 [0.0456,0.0560]
 
-  KONVERGENS-CHECK (relativ aendring R_max=96 → 112):
-    P50.0: 0.0833 → 0.0795  (4.6% aendring)  [KONVERGERET (<5%)]
-    P99.9: 0.0531 → 0.0513  (3.4% aendring)  [KONVERGERET (<5%)]
+  CONVERGENCE CHECK (relative change R_max=96 -> 112):
+    P50.0: 0.0833 → 0.0795  (4.6% change)  [CONVERGED (<5%)]
+    P99.9: 0.0531 → 0.0513  (3.4% change)  [CONVERGED (<5%)]
 
-  SEPARATION (P50 vs P99.9) ved hver R_max:
+  SEPARATION (P50 vs P99.9) at each R_max:
     R_max= 32: P50=0.1119, P99.9=0.0826, ratio=0.739
     R_max= 48: P50=0.0991, P99.9=0.0691, ratio=0.697
     R_max= 64: P50=0.0904, P99.9=0.0625, ratio=0.691
     R_max= 80: P50=0.0861, P99.9=0.0565, ratio=0.656
     R_max= 96: P50=0.0833, P99.9=0.0531, ratio=0.637
     R_max=112: P50=0.0795, P99.9=0.0513, ratio=0.645
-
-  FORTOLKNING (Eksp 2 — trunkerings-indvending):
-    Hvis C_far flader ud inden R_max=112 => resultatet er ikke en
-    artefakt af integrationsdomaenet. En reviewer kan se at det ikke
-    ville vende ved stoerre R.
-    Hvis P99.9 < P50 ved ALLE R_max => faldet er robust paa tvaers af
-    cutoff og lever ikke kun i en bestemt skala.
 ======================================================================
-KOMPONENTER (tab:comp) — kombineret (= tab:comp)
+COMPONENTS (tab:comp) — kombineret (= tab:comp)
 ======================================================================
    R_max |  abs P50 abs P99.9 |  sig P50 sig P99.9
       32 |    11.82     19.96 |     1.28      1.58
@@ -175,24 +154,24 @@ KOMPONENTER (tab:comp) — kombineret (= tab:comp)
       96 |    21.49     30.13 |     1.75      1.59
      112 |    22.87     31.45 |     1.78      1.57
 ======================================================================
-REPRODUKTIONS-CHECK mod publicerede tab:comp/tab:conv (pooled)
+SELF-CHECK against deposited tab:comp/tab:conv aggregates (pooled)
 ======================================================================
-  tab:conv R= 32: maalt 0.1119/0.0826  publ 0.112/0.083  [OK]
-  tab:comp R= 32: abs 11.82/19.96 (publ 11.82/19.96)  sig 1.28/1.58 (publ 1.28/1.58)  [OK]
-  tab:conv R= 48: maalt 0.0991/0.0691  publ 0.099/0.069  [OK]
-  tab:comp R= 48: abs 15.36/23.74 (publ 15.36/23.74)  sig 1.50/1.62 (publ 1.5/1.62)  [OK]
-  tab:conv R= 64: maalt 0.0904/0.0625  publ 0.090/0.063  [OK]
-  tab:comp R= 64: abs 17.89/26.52 (publ 17.89/26.52)  sig 1.67/1.62 (publ 1.67/1.62)  [OK]
-  tab:conv R= 80: maalt 0.0861/0.0565  publ 0.086/0.057  [OK]
-  tab:comp R= 80: abs 19.87/28.51 (publ 19.87/28.51)  sig 1.71/1.61 (publ 1.71/1.61)  [OK]
-  tab:conv R= 96: maalt 0.0833/0.0531  publ 0.083/0.053  [OK]
-  tab:comp R= 96: abs 21.49/30.13 (publ 21.49/30.13)  sig 1.75/1.59 (publ 1.75/1.59)  [OK]
-  tab:conv R=112: maalt 0.0795/0.0513  publ 0.080/0.051  [OK]
-  tab:comp R=112: abs 22.87/31.45 (publ 22.87/31.45)  sig 1.78/1.57 (publ 1.78/1.57)  [OK]
+  tab:conv R= 32: measured 0.1119/0.0826  ref 0.112/0.083  [OK]
+  tab:comp R= 32: abs 11.82/19.96 (ref 11.82/19.96)  sig 1.28/1.58 (ref 1.28/1.58)  [OK]
+  tab:conv R= 48: measured 0.0991/0.0691  ref 0.099/0.069  [OK]
+  tab:comp R= 48: abs 15.36/23.74 (ref 15.36/23.74)  sig 1.50/1.62 (ref 1.5/1.62)  [OK]
+  tab:conv R= 64: measured 0.0904/0.0625  ref 0.090/0.063  [OK]
+  tab:comp R= 64: abs 17.89/26.52 (ref 17.89/26.52)  sig 1.67/1.62 (ref 1.67/1.62)  [OK]
+  tab:conv R= 80: measured 0.0861/0.0565  ref 0.086/0.057  [OK]
+  tab:comp R= 80: abs 19.87/28.51 (ref 19.87/28.51)  sig 1.71/1.61 (ref 1.71/1.61)  [OK]
+  tab:conv R= 96: measured 0.0833/0.0531  ref 0.083/0.053  [OK]
+  tab:comp R= 96: abs 21.49/30.13 (ref 21.49/30.13)  sig 1.75/1.59 (ref 1.75/1.59)  [OK]
+  tab:conv R=112: measured 0.0795/0.0513  ref 0.080/0.051  [OK]
+  tab:comp R=112: abs 22.87/31.45 (ref 22.87/31.45)  sig 1.78/1.57 (ref 1.78/1.57)  [OK]
 
-  SAMLET: REPRODUCERET — deposit-data godkendt
+  OVERALL: REPRODUCED — matches deposited aggregates
 
-Skrev cz_convergence_v2_targets.csv (4800 raekker) — deposit-grade.
+Wrote cz_convergence_v2_targets.csv (4800 rows).
 ======================================================================
-KOMPLET — 757 sek
+COMPLETE — 754 s
 ======================================================================
