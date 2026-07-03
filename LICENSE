@@ -1,0 +1,48 @@
+This repository contains code and derived data for the manuscript
+"Radius-dependent looseness of far-field Calderon-Zygmund bounds in
+turbulent vortex stretching" (Jesper Lyng Jensen, 2026).
+
+Two licenses apply:
+
+================================================================
+1. CODE  (all files under code/):  MIT License
+================================================================
+
+Copyright (c) 2026 Jesper Lyng Jensen, SRT Compute ApS (CVR 30203178),
+Jenslevvej 68, 4070 Kirke Hyllinge, Denmark
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+================================================================
+2. DERIVED DATA AND DOCUMENTATION  (all files under data/, README.md):
+   Creative Commons Attribution 4.0 International (CC BY 4.0)
+================================================================
+
+Copyright (c) 2026 Jesper Lyng Jensen, SRT Compute ApS (CVR 30203178)
+
+This material is licensed under the Creative Commons Attribution 4.0
+International License. To view a copy of this license, visit
+https://creativecommons.org/licenses/by/4.0/
+
+Attribution: please cite the manuscript above and credit
+"Jesper Lyng Jensen, SRT Compute ApS".
+
+Note: the underlying raw DNS fields belong to the Johns Hopkins Turbulence
+Databases and the SMART-Turb/TURB-Rot project respectively, are not
+redistributed here, and are subject to their own terms of use.
