@@ -1,5 +1,5 @@
 r"""
-cz_01_download_v3_re611fix.py
+cz_01_download.py
 
 Downloads isotropic-turbulence velocity cutouts from the Johns Hopkins
 Turbulence Database for the Calderon-Zygmund far-field stretching analysis.
@@ -34,7 +34,7 @@ Metadata written/patched for every file:
 
 Run:
     conda activate <env>
-    python cz_01_download_v3_re611fix.py
+    python cz_01_download.py
 
 Output:
     ./cz_data/iso_re433_s{1,2,3}_c{0..3}.h5

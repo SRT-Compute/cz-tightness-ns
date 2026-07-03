@@ -1,5 +1,5 @@
 """
-cz_make_figures.py
+make_figures.py
 
 Generates the figures for the Calderon-Zygmund far-field looseness paper from
 the FD4 analysis output (the CSVs written by cz_02_analysis.py).
@@ -16,7 +16,7 @@ Produces, in ./cz_figures/ :
 Each figure is vector PDF at a width suitable for a single journal column.
 Run after the analysis, from the same working directory:
     conda activate <env>
-    python cz_make_figures.py
+    python make_figures.py
 """
 
 import csv
@@ -29,7 +29,7 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 from matplotlib.ticker import AutoMinorLocator
 
-RESULTS_PATH = "./figure_data"   # FD4 run output; change to ./cz_results for the FD2 run
+RESULTS_PATH = "./figure_data"
 FIG_PATH = "./cz_figures"
 
 RES = [433, 611, 1300]

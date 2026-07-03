@@ -45,8 +45,9 @@ Robustness variants: `tail_median_ratio.csv`, `inner_cutoff_sensitivity.csv`, an
    (replace `YOUR_JHTDB_TOKEN_HERE`).
 2. `python code/cz_01_download.py` downloads the velocity cutouts listed in
    `data/cutout_manifest.csv`.
-3. `python code/cz_02_analysis.py` recomputes the manifests and every file in
-   `figure_data/`.
+3. `python code/cz_02_analysis.py` recomputes the manifests and per-block statistics;
+   outputs are written to `./cz_results_fd4/` and can be compared against the deposited
+   `data/` and `figure_data/`.
 4. `python code/make_figures.py` regenerates the five figures from `figure_data/`.
 
 The per-block statistics in `figure_data/` are provided directly, so the figures and

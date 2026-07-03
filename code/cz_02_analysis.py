@@ -1,12 +1,11 @@
 """
-cz_02_analysis_v3_robust.py
+cz_02_analysis.py
 
 Calderon-Zygmund far-field stretching analysis on JHTDB isotropic cutouts.
 
-This version extends cz_02_analysis_v2_fd4.py with four peer-review robustness
-checks, each gated by a config flag near the top of the file and each writing to
-its OWN new CSV file. With all four flags off, this script reproduces the v2
-core outputs byte-for-byte; with them on, the core outputs are unchanged and the
+Four robustness checks are gated by config flags near the top of the file, each
+writing to its own CSV file. With all four flags off, the script produces the
+core outputs alone; with them on, the core outputs are unchanged and the
 following additional files are written to OUT_PATH:
 
   (1) POOLED_THRESHOLD_SENSITIVITY -> tightness_pooled.csv,
@@ -48,7 +47,7 @@ default); and cutout/target manifests.
 
 Run:
     conda activate <env>
-    python cz_02_analysis_v3_robust.py
+    python cz_02_analysis.py
 
 Input:
     ./cz_data/iso_re{Re}_s{snap}_c{cut}.h5
@@ -966,7 +965,6 @@ def db_gradient_validation_row(meta, omag_fd2):
         gx, gy, gz = _np.meshgrid(xs, ys, zs, indexing="ij")
         points = _np.column_stack([gx.ravel(), gy.ravel(), gz.ravel()]).astype(_np.float64)
 
-        # NOTE: confirm this signature against the installed givernylocal demo.
         # getData(dataset, variable, time, temporal_method, spatial_method,
         #         spatial_operator, points)
         grad = getData(ds, "velocity", snap, "none", "fd8noint", "gradient", points)
