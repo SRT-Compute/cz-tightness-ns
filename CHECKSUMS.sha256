@@ -2,7 +2,7 @@
 4ac57aaaa581245ed1e6f5939e52203c614631be6f7c952580493b360f521de4  ./README.md
 4e1d688340e0c66858fcab17227e73e65cda0d4ea89e82c9687a4a7c35136cf2  ./code/cz_01_download.py
 25e6e513905ac0c3a055499201f1152066cfae1e9235e61cbdaf7ee632cfa547  ./code/cz_02_analysis.py
-4643f4c629554c2659987707c3f363d1128ad688c980e4a592521f4a6cf66943  ./code/make_figures.py
+b289ff5911904fee0fac7ac30ed074498f64fc6cbfff31acbaaa20ceb22ab793  ./code/make_figures.py
 3b066ffb9b40233f110cbfd1004ca6a8067db5f2759d8bd56ce94abadbc3e030  ./data/cutout_manifest.csv
 f62ed451ea656834cc0da83f51989cf1c14f3343dff03fa9e33a7d58afd4b599  ./data/target_manifest.csv
 26e7bbe48bd70743511f402f6365c852ba66c12afec483f5c422bcb8b82da1dd  ./figure_data/capacity_logfit.csv
