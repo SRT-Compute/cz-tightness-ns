@@ -337,6 +337,14 @@ def make_fig5_shellcancel(shell_rows):
     ax.set_xlabel(r"shell mid-radius $R/\eta$")
     ax.set_ylabel(r"shell cancellation $A=|\sum q|/\sum|q|$")
     ax.set_title(r"per-shell angular cancellation", fontsize=8.5, loc="left")
+    from matplotlib.lines import Line2D
+    handles = [Line2D([0], [0], color=COLOR[re], lw=1.4, label=RE_LABEL[re]) for re in RES]
+    handles += [
+        Line2D([0], [0], color="0.3", marker="o", linestyle="-", markerfacecolor="0.3", label="median"),
+        Line2D([0], [0], color="0.3", marker="s", linestyle="--", markerfacecolor="white",
+               markeredgecolor="0.3", label="tail (P99.9)"),
+    ]
+    ax.legend(handles=handles, loc="upper right", fontsize=6.0)
     ax.xaxis.set_minor_locator(AutoMinorLocator()); ax.yaxis.set_minor_locator(AutoMinorLocator())
     fig.tight_layout()
     out = os.path.join(FIG_PATH, "fig5_shell_cancellation.pdf")
