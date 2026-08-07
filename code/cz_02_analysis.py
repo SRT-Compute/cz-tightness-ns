@@ -66,6 +66,16 @@ Output:
     ./cz_results_fd4/tail_median_ratio.csv
     ./cz_results_fd4/fd_order_validation.csv
     ./cz_results_fd4/db_gradient_validation.csv   (only if USE_DB_GRADIENT_VALIDATION)
+
+Array orientation and its validation:
+    The HDF5 cutouts written by cz_01_download.py store the spatial axes in (z, y, x)
+    order (from the giverny transpose), while the three velocity components are stored
+    in (x, y, z) order. load_velocity() therefore permutes the components to (2, 1, 0)
+    so that the component order matches the axis order, giving a consistent (reflected)
+    Cartesian frame; every physical quantity used here is O(3)-invariant.
+    Each cutout must then pass an orientation gate before it is analysed:
+    <|S|^2>/<|omega|^2> in [0.45, 0.55], and RMS finite-difference divergence below 5%
+    of the gradient norm. A cutout that fails the gate raises and stops the run.
 """
 
 import csv
@@ -141,6 +151,31 @@ DATASET_BY_TITLE = {d["title"]: d for d in DATASETS}
 # ----------------------------------------------------------------------
 # Metadata and IO
 # ----------------------------------------------------------------------
+# --- Array orientation: component permutation and validation gate -------------
+COMP_PERM = (2, 1, 0)   # stored axes are (z, y, x); align the component order to them
+GATE_RATIO_BAND = (0.45, 0.55)
+GATE_DIV_MAX = 0.05
+
+
+def _fd4_gate(f, axis):
+    return (-np.roll(f, -2, axis=axis) + 8.0 * np.roll(f, -1, axis=axis)
+            - 8.0 * np.roll(f, 1, axis=axis) + np.roll(f, 2, axis=axis)) / 12.0
+
+
+def orientation_gate(u):
+    """Return (<|S|^2>/<|omega|^2>, RMS divergence / gradient norm) on a central
+    subcube. Correct orientation gives a ratio near 0.50 and a divergence near 0."""
+    c0 = u.shape[1] // 2
+    h = min(64, c0 - 4)
+    v = u[:, c0 - h:c0 + h, c0 - h:c0 + h, c0 - h:c0 + h]
+    du = [[_fd4_gate(v[i], j)[(slice(3, -3),) * 3] for j in range(3)] for i in range(3)]
+    A = sum(float((du[i][j] ** 2).mean()) for i in range(3) for j in range(3))
+    B = sum(float((du[i][j] * du[j][i]).mean()) for i in range(3) for j in range(3))
+    div = du[0][0] + du[1][1] + du[2][2]
+    return 0.5 * (A + B) / (A - B), float(np.sqrt((div ** 2).mean())) / np.sqrt(A)
+# -----------------------------------------------------------------------------
+
+
 def _decode_attr(x):
     if isinstance(x, bytes):
         return x.decode("utf-8")
@@ -157,6 +192,16 @@ def load_velocity(path):
     with h5py.File(path, "r") as f:
         u = np.stack([f["u"][:], f["v"][:], f["w"][:]], axis=0).astype(np.float64)
         meta = {k: _decode_attr(v) for k, v in f.attrs.items()}
+    # Permute the components to match the stored axis order, then gate on the two
+    # identities of homogeneous incompressible flow (see the module docstring).
+    u = u[list(COMP_PERM)]
+    ratio, divrel = orientation_gate(u)
+    ok = (GATE_RATIO_BAND[0] <= ratio <= GATE_RATIO_BAND[1]) and (divrel < GATE_DIV_MAX)
+    print(f"    ORIENTATION: comp={COMP_PERM} ratio={ratio:.3f} div={divrel:.2e} "
+          f"GATE {'OK' if ok else 'FAILS'}  [{Path(path).name}]", flush=True)
+    if not ok:
+        raise RuntimeError(
+            f"Orientation gate failed for {path}: ratio={ratio:.3f}, div={divrel:.2e}.")
     return u, meta
 
 

@@ -112,7 +112,9 @@ def fetch_cube(ds, t, origin, size):
         arr = arr[0]
     if arr.shape[-1] != 3 and arr.shape[0] == 3:
         arr = np.moveaxis(arr, 0, -1)
-    return np.moveaxis(arr.astype(np.float64), -1, 0)  # (3, N, N, N)
+    # (3, N, N, N): spatial axes in (z, y, x) order, components in (x, y, z) order.
+    # cz_02_analysis.py permutes the components at load time to match the axes.
+    return np.moveaxis(arr.astype(np.float64), -1, 0)
 
 
 def cutout_origins(n_full, size, n_cutouts, rng):

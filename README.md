@@ -47,7 +47,10 @@ Robustness variants: `tail_median_ratio.csv`, `inner_cutoff_sensitivity.csv`, an
    `data/cutout_manifest.csv`.
 3. `python code/cz_02_analysis.py` recomputes the manifests and per-block statistics;
    outputs are written to `./cz_results_fd4/` and can be compared against the deposited
-   `data/` and `figure_data/`.
+   `data/` and `figure_data/`. Each cutout is checked on load against two identities of
+   homogeneous incompressible flow --- `<|S|^2>/<|omega|^2>` in `[0.45, 0.55]` and RMS
+   finite-difference divergence below 5% of the gradient norm --- and a cutout that fails
+   the check stops the run.
 4. `python code/make_figures.py` regenerates the five figures from `figure_data/`.
 
 The per-block statistics in `figure_data/` are provided directly, so the figures and
