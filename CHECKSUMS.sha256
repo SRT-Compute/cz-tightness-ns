@@ -1,7 +1,7 @@
 02d7574088d0d3571a1190cf965cd8dbf5637e590b64dbedb9d7e1ab626fb1c2  ./LICENSE
 4b6fba5a0915da78fe63a848eb5cbee0b5e93790827f7a9e5c2c6c1fd167b606  ./README.md
 954fee080a6ddbd0188faf3a4ce734d889ef89ecb7e534cf62d3679a760267b7  ./code/cz_01_download.py
-f2bd7d99efa95edb5ffa8ae079b58b082116d921274065598aa8a5601ec43e86  ./code/cz_02_analysis.py
+f01de894c3dfb17ee9471c0eb094660ad5d0351543b41cb1a1877d1c94b077fc  ./code/cz_02_analysis.py
 d73a1b8311f9d20e2b7dcddd202de0310b80cd0553f39c49a86558f65de0cdfc  ./code/make_figures.py
 efb10c7fdd742d5faf87c50c48e454c5e93de0aa2069359a2bb0a35111e2d6d3  ./data/cutout_manifest.csv
 ef2584b5984717c75e38dff43da52c3d19e7d65fde417fc556f77a35f7bdef0d  ./data/target_manifest.csv
