@@ -407,7 +407,11 @@ def shell_contributions(omega, ix, iy, iz, xi, off_x, off_y, off_z, r5, n):
     cx = xi[1] * rz - xi[2] * ry
     cy = xi[2] * rx - xi[0] * rz
     cz = xi[0] * ry - xi[1] * rx
-    fac = -3.0 * xdr / (4.0 * np.pi * r5)
+    # Correction (November 2026): the contracted Biot-Savart kernel has a positive overall sign.
+    # With r = target - source (as here), the physical kernel is +3 (xi.r)(xi x r) / (4 pi |r|^5);
+    # see the Erratum to Phys. Rev. Fluids 11, 094603 (2026). Only the sign of sigma_far changes;
+    # every reported quantity uses magnitudes and is unchanged.
+    fac = +3.0 * xdr / (4.0 * np.pi * r5)
     return fac * (cx * opx + cy * opy + cz * opz)
 
 
